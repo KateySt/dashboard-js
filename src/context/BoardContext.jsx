@@ -1,38 +1,81 @@
-import React, {createContext, useContext, useState} from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
 const BoardContext = createContext(undefined);
 
-export const BoardProvider = ({children}) => {
-  const [blocks, setBlocks] = useState(
-    [
-      {"id": "block-1", "x": 7, "y": 5, "w": 2, "h": 2, "content": "Блок 1"},
-      {"id": "block-2", "x": 7, "y": 0, "w": 5, "h": 5, "content": "Блок 2"},
-      {"id": "1752553983115", "x": 9, "y": 5, "w": 3, "h": 2, "content": "3"},
-      {"id": "1752554016460", "x": 4, "y": 0, "w": 3, "h": 7, "content": "4"},
-      {"id": "1752554029382", "x": 0, "y": 5, "w": 4, "h": 2, "content": "5"},
-      {"id": "1752554057373", "x": 0, "y": 0, "w": 4, "h": 5, "content": "6"}
-    ]
-  );
-  const [dashboard, setDashboard] = useState([]);
+const defaultBoardId = 'default';
+const initialBlocks = [
+  { id: 'block-1', x: 7, y: 5, w: 2, h: 2, content: 'Блок 1' },
+  { id: 'block-2', x: 7, y: 0, w: 5, h: 5, content: 'Блок 2' },
+  { id: '1752553983115', x: 9, y: 5, w: 3, h: 2, content: '3' },
+  { id: '1752554016460', x: 4, y: 0, w: 3, h: 7, content: '4' },
+  { id: '1752554029382', x: 0, y: 5, w: 4, h: 2, content: '5' },
+  { id: '1752554057373', x: 0, y: 0, w: 4, h: 5, content: '6' },
+];
 
-  const addDashboard = (dashboard) => {
-    const newDashboard = {id: Date.now().toString(), dashboard};
-    setDashboard(prev => ({...prev, newDashboard}));
-  }
+export const BoardProvider = ({ children }) => {
+  const [boards, setBoards] = useState({
+    [defaultBoardId]: initialBlocks,
+  });
+
+  const [currentBoardId, setCurrentBoardId] = useState(defaultBoardId);
+
+  const blocks = boards[currentBoardId] || [];
 
   const addBlock = (block) => {
-    const newBlock = {id: Date.now().toString(), ...block};
-    setBlocks(prev => [...prev, newBlock]);
+    const newBlock = { id: Date.now().toString(), ...block };
+    setBoards((prev) => ({
+      ...prev,
+      [currentBoardId]: [...prev[currentBoardId], newBlock],
+    }));
   };
 
   const updateBlock = (id, updates) => {
-    setBlocks(prev =>
-      prev.map(block => (block.id === id ? {...block, ...updates} : block))
-    );
+    setBoards((prev) => ({
+      ...prev,
+      [currentBoardId]: prev[currentBoardId].map((b) =>
+        b.id === id ? { ...b, ...updates } : b
+      ),
+    }));
   };
 
   const removeBlock = (id) => {
-    setBlocks(prev => prev.filter(block => block.id !== id));
+    setBoards((prev) => ({
+      ...prev,
+      [currentBoardId]: prev[currentBoardId].filter((b) => b.id !== id),
+    }));
+  };
+
+  const createDashboardFromCurrent = () => {
+    const newId = `board-${Date.now()}`;
+    setBoards((prev) => ({
+      ...prev,
+      [newId]: [...prev[currentBoardId]],
+    }));
+    setCurrentBoardId(newId);
+  };
+
+  const createEmptyDashboard = () => {
+    const newId = `board-${Date.now()}`;
+    setBoards((prev) => ({
+      ...prev,
+      [newId]: [],
+    }));
+    setCurrentBoardId(newId);
+  };
+
+  const removeDashboard = (id) => {
+    setBoards((prev) => {
+      const updated = { ...prev };
+      delete updated[id];
+      return updated;
+    });
+    if (id === currentBoardId) {
+      setCurrentBoardId(defaultBoardId);
+    }
+  };
+
+  const switchBoard = (id) => {
+    setCurrentBoardId(id);
   };
 
   return (
@@ -42,10 +85,14 @@ export const BoardProvider = ({children}) => {
         addBlock,
         updateBlock,
         removeBlock,
-        //---
-        dashboard,
-        addDashboard
-      }}>
+        boards,
+        currentBoardId,
+        switchBoard,
+        createDashboardFromCurrent,
+        createEmptyDashboard,
+        removeDashboard,
+      }}
+    >
       {children}
     </BoardContext.Provider>
   );
