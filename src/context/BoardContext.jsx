@@ -16,11 +16,11 @@ export const BoardProvider = ({ children }) => {
   const [boards, setBoards] = useState({
     [defaultBoardId]: initialBlocks,
   });
-
+console.log(boards);
   const [currentBoardId, setCurrentBoardId] = useState(defaultBoardId);
-
+console.log(currentBoardId);
   const blocks = boards[currentBoardId] || [];
-
+  console.log(blocks);
   const addBlock = (block) => {
     const newBlock = { id: Date.now().toString(), ...block };
     setBoards((prev) => ({
@@ -70,12 +70,21 @@ export const BoardProvider = ({ children }) => {
       return updated;
     });
     if (id === currentBoardId) {
-      setCurrentBoardId(defaultBoardId);
+      setCurrentBoardId(id);
     }
   };
 
   const switchBoard = (id) => {
     setCurrentBoardId(id);
+  };
+
+  const updateBlockOnBoard = (boardId, id, updates) => {
+    setBoards((prev) => ({
+      ...prev,
+      [boardId]: prev[boardId]?.map((b) =>
+        b.id === id ? { ...b, ...updates } : b
+      ),
+    }));
   };
 
   return (
@@ -91,6 +100,7 @@ export const BoardProvider = ({ children }) => {
         createDashboardFromCurrent,
         createEmptyDashboard,
         removeDashboard,
+        updateBlockOnBoard
       }}
     >
       {children}

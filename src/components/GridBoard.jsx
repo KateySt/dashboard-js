@@ -36,9 +36,10 @@ const GridBoard = () => {
     createDashboardFromCurrent,
     createEmptyDashboard,
     removeDashboard,
+    updateBlockOnBoard,
   } = useBoard();
 
-  useEffect(() => {
+  useEffect(() =>{
     if (!gridInstance.current && gridRef.current) {
       const grid = GridStack.init({ column: 12, float: true }, gridRef.current);
       gridInstance.current = grid;
@@ -98,12 +99,54 @@ const GridBoard = () => {
         renderedIds.current.add(block.id);
       });
     }
-  }, [blocks, removeBlock, updateBlock]);
+  }, []);
+
+  useEffect(() => {
+    const grid = gridInstance.current;
+    if (!grid) return;
+
+    blocks.forEach((block) => {
+      if (!renderedIds.current.has(block.id)) {
+        grid.addWidget({
+          x: block.x,
+          y: block.y,
+          w: block.w,
+          h: block.h,
+          id: block.id,
+          content: block.content,
+        });
+        renderedIds.current.add(block.id);
+      }
+    });
+  }, [blocks,gridInstance]);
 
   const handleAddBlock = () => {
     addBlock({ x: 0, y: 0, w: 3, h: 2, content: '➕ Новый блок' });
   };
 
+  useEffect(() => {
+    const grid = gridInstance.current;
+    if (!grid) return;
+
+    const onChange = (e, items) => {
+      items.forEach((item) => {
+        if (item.id) {
+          updateBlockOnBoard(currentBoardId, item.id, {
+            x: item.x,
+            y: item.y,
+            w: item.w,
+            h: item.h,
+          });
+        }
+      });
+    };
+
+    grid.on('change', onChange);
+
+    return () => {
+      grid.off('change', onChange); // ❗ Удаляем обработчик при смене boardId
+    };
+  }, [currentBoardId]);
   return (
     <>
       <div className="mb-4 flex flex-wrap gap-2">
