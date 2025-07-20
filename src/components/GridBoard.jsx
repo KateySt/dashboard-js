@@ -144,7 +144,7 @@ const GridBoard = () => {
     grid.on('change', onChange);
 
     return () => {
-      grid.off('change', onChange); // ❗ Удаляем обработчик при смене boardId
+      grid.off('change', onChange);
     };
   }, [currentBoardId]);
   return (
