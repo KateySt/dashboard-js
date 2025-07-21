@@ -13,7 +13,7 @@ const BlockItem = ({ id, content, onRemove }) => (
         onClick={() => onRemove(id)}
         className="text-red-400 hover:text-red-600 text-sm"
       >
-        х
+        ×
       </button>
     </div>
   </div>
@@ -29,76 +29,80 @@ const GridBoard = () => {
     blocks,
     addBlock,
     removeBlock,
-    updateBlock,
+    updateBlockOnBoard,
     boards,
     currentBoardId,
     switchBoard,
     createDashboardFromCurrent,
     createEmptyDashboard,
     removeDashboard,
-    updateBlockOnBoard,
   } = useBoard();
 
-  useEffect(() =>{
-    if (!gridInstance.current && gridRef.current) {
-      const grid = GridStack.init({ column: 12, float: true }, gridRef.current);
-      gridInstance.current = grid;
+  useEffect(() => {
+    if (!gridRef.current || gridInstance.current) return;
 
-      grid.on('removed', (e, items) => {
-        items.forEach((item) => {
-          const id = item.id;
-          if (renderedRoots.current[id]) {
-            renderedRoots.current[id].unmount();
-            delete renderedRoots.current[id];
-            renderedIds.current.delete(id);
-          }
-        });
+    const grid = GridStack.init({ column: 12, float: true }, gridRef.current);
+    gridInstance.current = grid;
+
+    grid.on('removed', (_, items) => {
+      items.forEach((item) => {
+        const id = item.id;
+        if (renderedRoots.current[id]) {
+          renderedRoots.current[id].unmount();
+          delete renderedRoots.current[id];
+          renderedIds.current.delete(id);
+        }
       });
+    });
 
-      grid.on('change', (e, items) => {
-        items.forEach((item) => {
-          if (item.id) {
-            updateBlock(item.id, {
-              x: item.x,
-              y: item.y,
-              w: item.w,
-              h: item.h,
-            });
-          }
-        });
+    const onGridChange = (_, items) => {
+      items.forEach((item) => {
+        if (item.id) {
+          updateBlockOnBoard(currentBoardId, item.id, {
+            x: item.x,
+            y: item.y,
+            w: item.w,
+            h: item.h,
+          });
+        }
       });
+    };
+    grid.on('change', onGridChange);
 
-      GridStack.renderCB = (el, widget) => {
-        const wrapper = el.closest('.grid-stack-item');
-        const id = widget.id;
-        const root = createRoot(el);
+    GridStack.renderCB = (el, widget) => {
+      const wrapper = el.closest('.grid-stack-item');
+      const id = widget.id;
+      const root = createRoot(el);
 
-        root.render(
-          <BlockItem
-            id={id}
-            content={widget.content}
-            onRemove={() => {
-              grid.removeWidget(wrapper);
-              removeBlock(id);
-            }}
-          />
-        );
+      root.render(
+        <BlockItem
+          id={id}
+          content={widget.content}
+          onRemove={() => {
+            grid.removeWidget(wrapper);
+            removeBlock(id);
+          }}
+        />
+      );
 
-        renderedRoots.current[id] = root;
-      };
+      renderedRoots.current[id] = root;
+    };
 
-      blocks.forEach((block) => {
-        grid.addWidget({
-          x: block.x,
-          y: block.y,
-          w: block.w,
-          h: block.h,
-          id: block.id,
-          content: block.content,
-        });
-        renderedIds.current.add(block.id);
+    blocks.forEach((block) => {
+      grid.addWidget({
+        x: block.x,
+        y: block.y,
+        w: block.w,
+        h: block.h,
+        id: block.id,
+        content: block.content,
       });
-    }
+      renderedIds.current.add(block.id);
+    });
+
+    return () => {
+      grid.off('change', onGridChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -118,35 +122,12 @@ const GridBoard = () => {
         renderedIds.current.add(block.id);
       }
     });
-  }, [blocks,gridInstance]);
+  }, [blocks]);
 
   const handleAddBlock = () => {
-    addBlock({ x: 0, y: 0, w: 3, h: 2, content: '➕ Новый блок' });
+    addBlock({ x: 0, y: 0, w: 3, h: 2, content: '➕ New Block' });
   };
 
-  useEffect(() => {
-    const grid = gridInstance.current;
-    if (!grid) return;
-
-    const onChange = (e, items) => {
-      items.forEach((item) => {
-        if (item.id) {
-          updateBlockOnBoard(currentBoardId, item.id, {
-            x: item.x,
-            y: item.y,
-            w: item.w,
-            h: item.h,
-          });
-        }
-      });
-    };
-
-    grid.on('change', onChange);
-
-    return () => {
-      grid.off('change', onChange);
-    };
-  }, [currentBoardId]);
   return (
     <>
       <div className="mb-4 flex flex-wrap gap-2">
@@ -165,27 +146,30 @@ const GridBoard = () => {
           onClick={createDashboardFromCurrent}
           className="px-3 py-1 bg-blue-600 text-white rounded"
         >
-          📄 Копия доски
+          📄 Clone Board
         </button>
         <button
           onClick={createEmptyDashboard}
           className="px-3 py-1 bg-purple-600 text-white rounded"
         >
-          🆕 Пустая доска
+          🆕 New Empty Board
         </button>
         {currentBoardId !== 'default' && (
           <button
             onClick={() => removeDashboard(currentBoardId)}
             className="px-3 py-1 bg-red-600 text-white rounded"
           >
-           х Удалить текущую
+            × Delete Current Board
           </button>
         )}
       </div>
 
       <div className="mb-2">
-        <button onClick={handleAddBlock} className="px-4 py-2 bg-blue-600 text-white rounded">
-          ➕ Добавить блок
+        <button
+          onClick={handleAddBlock}
+          className="px-4 py-2 bg-blue-600 text-white rounded"
+        >
+          ➕ Add Block
         </button>
       </div>
 
