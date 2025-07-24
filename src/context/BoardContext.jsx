@@ -16,11 +16,11 @@ export const BoardProvider = ({ children }) => {
   const [boards, setBoards] = useState({
     [defaultBoardId]: initialBlocks,
   });
-console.log(boards);
+
   const [currentBoardId, setCurrentBoardId] = useState(defaultBoardId);
-console.log(currentBoardId);
+
   const blocks = boards[currentBoardId] || [];
-  console.log(blocks);
+
   const addBlock = (block) => {
     const newBlock = { id: Date.now().toString(), ...block };
     setBoards((prev) => ({
