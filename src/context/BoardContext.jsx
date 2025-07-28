@@ -54,7 +54,6 @@ export const BoardProvider = ({ children }) => {
     }));
   };
 
-  // Dashboards
   const createDashboardFromCurrent = () => {
     const newId = `board-${generateId()}`;
     setBoards(prev => ({
